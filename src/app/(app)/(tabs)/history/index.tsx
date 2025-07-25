@@ -19,14 +19,14 @@ import { Ionicons } from "@expo/vector-icons";
 
 // Define query
 export const getWorkoutsQuery = defineQuery(`*[_type == "workout" && userId == $userId] | order(date desc) {
-  _id,
+    _id,
   date,
   duration,
   exercises[] {
     exercise->{
       _id,
       name
-    },
+  
   },
   sets[] {
     reps,
@@ -37,6 +37,7 @@ export const getWorkoutsQuery = defineQuery(`*[_type == "workout" && userId == $
   },
   _type,
   _key
+      }
 }`);
 
 export default function HistoryPage() {
@@ -215,6 +216,36 @@ export default function HistoryPage() {
     </View>
   </View>
 </View>
+
+{/* Exercise List */}
+{workout.exercises && workout.exercises.length > 0 && (
+  <View>
+    <Text className="text-sm font-medium text-gray-700 mb-2">
+      Exercises:
+    </Text>
+    <View className="flex-row flex-wrap">
+      {getExerciseNames(workout)
+        .slice(0, 3)
+        .map((name, index) => (
+          <View
+            key={index}
+            className="bg-blue-50 rounded-lg px-3 py-1 mr-2 mb-2"
+          >
+            <Text className="text-blue-700 text-sm font-medium">
+              {name}
+            </Text>
+          </View>
+        ))}
+      {getExerciseNames(workout).length > 3 && (
+        <View className="bg-gray-100 rounded-lg px-3 py-1 mr-2 mb-2">
+          <Text className="text-gray-600 text-sm font-medium">
+            +{getExerciseNames(workout).length - 3} more
+          </Text>
+        </View>
+      )}
+    </View>
+  </View>
+)}
   </TouchableOpacity>
 ))}
           </View>
