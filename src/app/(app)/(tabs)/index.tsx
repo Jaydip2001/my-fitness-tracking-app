@@ -1,91 +1,285 @@
-import { Link } from "expo-router";
-import React from "react";
-import { SafeAreaView, Text, View } from "react-native";
+import { client } from "@/lib/sanity/client";
+import { useUser } from "@clerk/clerk-expo";
+import { Link, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { GetWorkoutsQueryResult } from "sanity/sanity.types";
+import { getWorkoutsQuery } from "./history";
+import { formatDuration } from "@/lib/utils";
+import { Ionicons } from "@expo/vector-icons";
 
-export default function Page() {
-  return (
-    <SafeAreaView className="flex flex-1">
-      <Header />
-      <Content />
-    </SafeAreaView>
+export default function HomePage() {
+  const { user } = useUser();
+  const router = useRouter();
+  const [workouts, setWorkouts] = useState<GetWorkoutsQueryResult>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchWorkouts = async () => {
+    if (!user?.id) return;
+
+    try {
+      const results = await client.fetch(getWorkoutsQuery, { userId: user.id });
+      setWorkouts(results);
+    } catch (error) {
+      console.error("Error fetching workouts:", error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWorkouts();
+  }, [user?.id]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchWorkouts();
+  };
+
+  
+  //Calculate Stats
+  const totalWorkouts = workouts.length;
+  const lastWorkout = workouts[0];
+  const totalDuration = workouts.reduce(
+    (sum, workout) => sum + (workout.duration || 0),
+    0
   );
-}
+  const averageDuration =
+    totalWorkouts > 0 ? Math.round(totalDuration / totalWorkouts) : 0;
 
-function Content() {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return "Today";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return "Yesterday";
+    } else {
+      return date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+    }
+  };
+
+  const getTotalSets = (workout: GetWorkoutsQueryResult[number]) => {
+    return (
+      workout.exercises?.reduce((total, exercise) => {
+        return total + (exercise.sets?.length || 0);
+      }, 0) || 0
+    );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-gray-50">
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text className="text-gray-600 mt-4">Loading your stats...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
   return (
-    <View className="flex-1">
-      <View className="py-12 md:py-24 lg:py-32 xl:py-48">
-        <View className="px-4 md:px-6">
-          <View className="flex flex-col items-center gap-4 text-center">
-            <Text
-              role="heading"
-              className="text-3xl text-center native:text-5xl  font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl"
-            >
-              Expo + Tailwind (NativeWind) Template 123
+    <SafeAreaView className=" flex-1 bg-gray-50">
+     <ScrollView
+        className="flex-1"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Header */}
+        <View className="px-6 pt-8 pb-6">
+          <Text className="text-lg text-gray-900">Welcome back,</Text>
+          <Text className="text-3xl font-bold text-gray-900">
+            {user?.firstName || "Athlete"}! 💪
+          </Text>
+          </View>
+              {/* Stats overview */}
+        <View className="px-6 mb-6">
+          <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <Text className="text-lg font-semibold text-gray-900 mb-4">
+              Your Stats
             </Text>
 
-            <Text className="mx-auto max-w-[700px]  text-lg text-center md:text-xl">
-              This template sets up Expo and Tailwind (NativeWind) allowing you
-              to quickly get started with my YouTube tutorial!
-            </Text>
-            <Link href="https://www.youtube.com/@sonnysangha" target="_blank">
-              <Text className="text-lg text-center text-blue-500 hover:text-blue-700 underline md:text-xl dark:text-blue-400 dark:hover:text-blue-300">
-                https://www.youtube.com/@sonnysangha
-              </Text>
-            </Link>
-
-            <View className="gap-4">
-              <Link
-                suppressHighlighting
-                className="flex h-9 items-center justify-center overflow-hidden rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 web:shadow ios:shadow transition-colors hover:bg-gray-900/90 active:bg-gray-400/90 web:focus-visible:outline-none web:focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90 dark:focus-visible:ring-gray-300"
-                href="https://www.youtube.com/@sonnysangha"
-              >
-                Visit my YouTube Channel
-              </Link>
-            </View>
-
-            <View className="gap-4">
-              <Link
-                suppressHighlighting
-                className="flex h-9 items-center justify-center overflow-hidden rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-gray-50 web:shadow ios:shadow transition-colors hover:bg-gray-900/90 active:bg-gray-400/90 web:focus-visible:outline-none web:focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90 dark:focus-visible:ring-gray-300"
-                href="https://www.papareact.com/course"
-              >
-                Get the Complete Source Code (Plus 60+ builds) ❤️
-              </Link>
-            </View>
-
-            <View className="gap-4">
-              <Link
-                suppressHighlighting
-                className="flex h-9 items-center justify-center overflow-hidden rounded-md bg-green-700 px-4 py-2 text-sm font-medium text-gray-50 web:shadow ios:shadow transition-colors hover:bg-gray-900/90 active:bg-gray-400/90 web:focus-visible:outline-none web:focus-visible:ring-1 focus-visible:ring-gray-950 disabled:pointer-events-none disabled:opacity-50 dark:bg-gray-50 dark:text-gray-900 dark:hover:bg-gray-50/90 dark:focus-visible:ring-gray-300"
-                href="https://www.papareact.com/course"
-              >
-                Join My Course & Learn to Code with AI 💚 (1000+ Students)
-              </Link>
+            <View className="flex-row justify-between">
+              <View className="items-center flex-1">
+                <Text className="text-2xl font-bold text-blue-600">
+                  {totalWorkouts}
+                </Text>
+                <Text className="text-sm text-gray-600 text-center">
+                  Total {"\n"}workouts
+                </Text>
+              </View>
+              <View className="items-center flex-1">
+                <Text
+                  style={{ color: "#16a34a" }}
+                  className="text-2xl font-bold"
+                >
+                  {formatDuration(totalDuration)}
+                </Text>
+                <Text className="text-sm text-gray-600 text-center">
+                  Total{"\n"}Time
+                </Text>
+              </View>
+              <View className="items-center flex-1">
+                <Text
+                  style={{ color: "#9333ea" }}
+                  className="text-2xl font-bold"
+                >
+                  {averageDuration > 0 ? formatDuration(averageDuration) : "0m"}
+                </Text>
+                <Text className="text-sm text-gray-600 text-center">
+                  Average{"\n"}Duration
+                </Text>
+              </View>
             </View>
           </View>
         </View>
-      </View>
-    </View>
-  );
-}
 
-function Header() {
-  return (
-    <View>
-      <View className="px-4 lg:px-6 h-14 flex items-center flex-row justify-between ">
-        <Link className="font-bold flex-1 items-center justify-center" href="/">
-          PAPAFAM
-        </Link>
-        <View className="">
-          <Link
-            className="text-md font-medium hover:underline web:underline-offset-4"
-            href="https://www.papareact.com/course"
+          {/* Quick Action */}
+          <View className="px-6 mb-6">
+          <Text className="text-lg font-semibold text-gray-900 mb-4">
+            Quick Actions
+          </Text>
+                    {/* Start Workout Button */}
+                    <TouchableOpacity
+            onPress={() => router.push("/workout")}
+            className="bg-blue-600 rounded-2xl p-6 mb-4 shadow-sm"
+            activeOpacity={0.8}
           >
-            Join My Course ❤️
-          </Link>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="w-12 h-12 bg-blue-500 rounded-full items-center justify-center mr-4">
+                  <Ionicons name="play" size={24} color="white" />
+                </View>
+                <View>
+                  <Text className="text-white text-xl font-semibold">
+                    Start Workout
+                  </Text>
+                  <Text style={{ color: "#DBEAFE" }}>
+                    Begin your training session
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="white" />
+            </View>
+          </TouchableOpacity>
+
+             {/* Action Grid */}
+             <View className="flex-row gap-4">
+            <TouchableOpacity
+              onPress={() => router.push("/history")}
+              className="bg-white rounded-2xl p-4 flex-1 shadow-sm border border-gray-100"
+              activeOpacity={0.7}
+            >
+              <View className="items-center">
+                <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center mb-3">
+                  <Ionicons name="time-outline" size={24} color="#6B7280" />
+                </View>
+                <Text className="text-gray-900 font-medium text-center">
+                  Workout{"\n"}History
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/exercises")}
+              className="bg-white rounded-2xl p-4 flex-1 shadow-sm border border-gray-100"
+              activeOpacity={0.7}
+            >
+              <View className="items-center">
+                <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center mb-3">
+                  <Ionicons name="barbell-outline" size={24} color="#6B7280" />
+                </View>
+                <Text className="text-gray-900 font-medium text-center">
+                  Browse{"\n"}Exercises
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </View>
+
+        {/* Last Workout */}
+        {lastWorkout && (
+          <View className="px-6 mb-8">
+            <Text className="text-lg font-semibold text-gray-900 mb-4">
+              Last Workout
+            </Text>
+            <TouchableOpacity
+              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+              onPress={() => {
+                router.push({
+                  pathname: "/history/workout-record",
+                  params: { workoutId: lastWorkout._id },
+                });
+              }}
+              activeOpacity={0.7}
+            >
+              <View className="flex-row items-center justify-between mb-4">
+                <View>
+                  <Text className="text-lg font-semibold text-gray-900">
+                    {formatDate(lastWorkout.date || "")}
+                  </Text>
+                  <View className="flex-row items-center mt-1">
+                    <Ionicons name="time-outline" size={16} color="#6B7280" />
+                    <Text className="text-gray-600 ml-2">
+                      { lastWorkout.duration
+                        ? formatDuration(lastWorkout.duration)
+                        : "Duration not recorded"
+                      }
+                    </Text>
+                  </View>
+                </View>
+                <View className="bg-blue-100 rounded-full w-12 h-12 items-center justify-center">
+                  <Ionicons name="fitness-outline" size={24} color="#3B82F6" />
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        {/* Empty state for no workouts */}
+        {totalWorkouts === 0 && (
+          <View className="px-5 mb-6">
+            <View className="bg-white rounded-2xl p-8 items-center shadow-sm border border-gray-100">
+              <View className="w-15 h-15 bg-blue-100 rounded-full items-center justify-center mb-4">
+                <Ionicons name="barbell-outline" size={32} color="#3B82F6" />
+              </View>
+              <Text className="text-xl font-semibold text-gray-900 mb-2">
+                Ready to start your fitness journey?
+              </Text>
+              <Text className="text-gray-600 text-center mb-4">
+                Track your workouts and see your progress over time
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push("/workout")}
+                className="bg-blue-600 rounded-xl px-6 py-3"
+                activeOpacity={0.8}
+              >
+                <Text className="text-white font-semibold">
+                  Start Your First Workout
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+   

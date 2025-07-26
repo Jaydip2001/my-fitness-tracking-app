@@ -1,8 +1,10 @@
 import { Stack, Tabs } from "expo-router";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { Image } from "react-native";
+import { useUser } from "@clerk/clerk-expo";
 
 const Layout = () => {
+  const { user } = useUser();
   return (
     <Tabs>
       <Tabs.Screen
@@ -39,14 +41,13 @@ const Layout = () => {
         name="active-workout"
         options={{
           headerShown: false,
-          href:null,
-         tabBarStyle:{
-          display:"none"
-         }
-         
+          href: null,
+          tabBarStyle: {
+            display: "none",
+          },
         }}
       />
-       <Tabs.Screen
+      <Tabs.Screen
         name="history"
         options={{
           headerShown: false,
@@ -56,18 +57,20 @@ const Layout = () => {
           ),
         }}
       />
-       <Tabs.Screen
+      <Tabs.Screen
         name="profile"
         options={{
           headerShown: false,
           title: "Profile",
-          // tabBarIcon: ({ color, size }) => (
-          //   <Image
-          //     source={user?.imageUrl ?? user?.externalAccounts[0]?.imageUrl}
-          //     className="rounded-full"
-          //     style={{width: 28, height: 28, borderRadius:100}}
-          //     />
-          // ),
+          tabBarIcon: ({ color, size }) => (
+            <Image
+              source={{
+                uri: user?.imageUrl ?? user?.externalAccounts[0]?.imageUrl,
+              }}
+              className="rounded-full"
+              style={{ width: 28, height: 28, borderRadius: 100 }}
+            />
+          ),
         }}
       />
     </Tabs>
