@@ -1,90 +1,99 @@
-import { View, Text, SafeAreaView, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { useLocalSearchParams } from 'expo-router';
-import { defineQuery } from 'groq';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  ActivityIndicator,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import groq from "groq";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { client } from "@/lib/sanity/client";
 import { GetWorkoutRecordQueryResult } from "sanity/sanity.types";
-import { formatDuration } from 'libs/utils';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { formatDuration } from "@/lib/utils";
+import exercise from "sanity/schemaTypes/exercise";
+import { Ionicons } from "@expo/vector-icons";
 
-const getWorkoutRecordQuery = 
-defineQuery(`*[_type == "workout" && _id == $workoutId][0] {
-  _id,
-  _type,
-  _createdAt,
-  date,
-  duration,
-  exercises[] {
-    exercise-> {
-      _id,
-      name,
-      description
-    },
-    sets[] {
-      reps,
-      weight,
-      weightUnit,
-      _type,
-      _key
-    },
+const getWorkoutRecordQuery = groq`*[_type == "workout" && _id == $workoutId] [0] {
+    _id,
     _type,
-    _key
-  }
-}`);
+    _createdAt,
+    date,
+    duration,
+    exercises[] {
+        exercise -> {
+            _id,
+            name,
+            description
+        },
+        sets[] {
+            reps,
+            weight,
+            weightUnit,
+            _type,
+            _key
+        },
+        _type,
+        _key
+    }
+    }`;
 
 export default function WorkoutRecord() {
-    const { workoutId } = useLocalSearchParams();
-    const [loading, setLoading] = useState(true);
-    const [deleting, setDeleting] = useState(false);
-    const [workout, setWorkout] = useState<GetWorkoutRecordQueryResult   | null >(null);
-    const router = useRouter();
-    useEffect(() => {
-        const fetchWorkout = async () => {
-          if (!workoutId) return;
-      
-          try {
-            const result = await client.fetch(getWorkoutRecordQuery, {
-              workoutId,
-            });
-            setWorkout(result);
-          } catch (error) {
-            console.error("Error fetching workout:", error);
-          } finally {
-            setLoading(false);
-          }
-        };
-      
-        fetchWorkout();
-      }, [workoutId]);
+  const { workoutId } = useLocalSearchParams();
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [workout, setWorkout] = useState<GetWorkoutRecordQueryResult | null>(
+    null
+  );
+  const router = useRouter();
 
-      // Format the date
-      const formatDate = (dateString?: string) => {
-        if (!dateString) return "Unknown Date";
-        const date = new Date(dateString);
-        return date.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-      };
+  useEffect(() => {
+    const fetchWorkout = async () => {
+      if (!workoutId) return;
 
-      const formatTime = (dateString?: string) => {
-        if (!dateString) return "";
-        const date = new Date(dateString);
-        return date.toLocaleTimeString("en-US", {
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
+      try {
+        const result = await client.fetch(getWorkoutRecordQuery, {
+          workoutId,
         });
-      };
-    
-      const formatWorkoutDuration = (seconds?: number) => {
-        if (!seconds) return "Duration not recorded";
-        return formatDuration(seconds);
-      };
-    
+        setWorkout(result);
+      } catch (error) {
+        console.error("Error fetching workout:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWorkout();
+  }, [workoutId]);
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Unknown Date";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatTime = (dateString?: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatWorkoutDuration = (seconds?: number) => {
+    if (!seconds) return "Duration not recorded";
+    return formatDuration(seconds);
+  };
+
   const getTotalSets = () => {
     return (
       workout?.exercises?.reduce((total, exercise) => {
@@ -92,7 +101,6 @@ export default function WorkoutRecord() {
       }, 0) || 0
     );
   };
-
 
   const getTotalVolume = () => {
     let totalVolume = 0;
@@ -109,6 +117,46 @@ export default function WorkoutRecord() {
     return { volume: totalVolume, unit };
   };
 
+  const handleDeleteWorkout = () => {
+    Alert.alert(
+      "Delete Workout",
+      "Are you sure you want to delete this workout? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: deleteWorkout,
+        },
+      ]
+    );
+  };
+
+  const deleteWorkout = async () => {
+    if (!workoutId) return;
+
+    setDeleting(true);
+
+    try {
+      await fetch("/api/delete-workout", {
+        method: "POST",
+        body: JSON.stringify({ workoutId }),
+      });
+
+      router.replace("/(app)/(tabs)/history?refresh=true");
+    } catch (error) {
+      console.error("Error deleting workout:", error);
+      Alert.alert("Error", "Failed to delete workout. Please try again.", [
+        { text: "OK" },
+      ]);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
@@ -120,7 +168,6 @@ export default function WorkoutRecord() {
     );
   }
 
-  
   if (!workout) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
@@ -142,11 +189,12 @@ export default function WorkoutRecord() {
       </SafeAreaView>
     );
   }
-const { volume, unit } = getTotalVolume();
+
+  const { volume, unit } = getTotalVolume();
 
   return (
-    <SafeAreaView className='flex-1 bg-gray-50'>
-        <ScrollView className='flex-1'>
+    <SafeAreaView className="flex-1 bg-gray-50">
+      <ScrollView className="flex-1">
         {/*workout summary */}
         <View className="bg-white p-6 border-b border-gray-300">
           <View className="flex-row items-center justify-between mb-4">
@@ -154,7 +202,7 @@ const { volume, unit } = getTotalVolume();
               Workout Summary
             </Text>
             <TouchableOpacity
-            //   onPress={handleDeleteWorkout}
+              onPress={handleDeleteWorkout}
               disabled={deleting}
               className="bg-red-600 px-4 py-2 rounded-lg flex-row items-center"
             >
@@ -190,13 +238,6 @@ const { volume, unit } = getTotalVolume();
             </Text>
           </View>
 
-          <View className="flex-row items-center mb-3">
-            <Ionicons name="bar-chart-outline" size={20} color="#6B7280" />
-            <Text className="text-gray-700 ml-3 font-medium">
-                {getTotalSets()} total sets
-            </Text>
-          </View>
-
           {volume > 0 && (
             <View className="flex-row items-center mb-3">
               <Ionicons name="barbell-outline" size={20} color="#6B7280" />
@@ -206,15 +247,15 @@ const { volume, unit } = getTotalVolume();
             </View>
           )}
         </View>
-        {/* Exercise List */}
-        <View className='space-y-4 p-6 gap-4'>
-        {workout.exercises?.map((exerciseData, index) => (
+
+        {/* Exerise List */}
+        <View className="space-y-4 p-6 gap-4">
+          {workout.exercises?.map((exerciseData, index) => (
             <View
               key={exerciseData._key}
               className="bg-white rounded-2xl p-6 shadow-sm border border-gary-100"
             >
-
-                {/* Exercise Header */}
+              {/* Exercise Header */}
               <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-1">
                   <Text className="text-lg font-bold text-gray-900">
@@ -229,8 +270,8 @@ const { volume, unit } = getTotalVolume();
                 </View>
               </View>
 
-        {/* Sets */}
-                <View className="space-y-2">
+              {/* Sets */}
+              <View className="space-y-2">
                 <Text className="text-sm font-medium text-gray-700 mb-2">
                   Sets:
                 </Text>
@@ -250,7 +291,6 @@ const { volume, unit } = getTotalVolume();
                       </Text>
                     </View>
 
-                    
                     {set.weight && (
                       <View className="flex-row items-center">
                         <Ionicons
@@ -266,11 +306,29 @@ const { volume, unit } = getTotalVolume();
                   </View>
                 ))}
               </View>
-            </View> 
-        ))}
+
+              {/* Exercise Volume Summary */}
+              {exerciseData.sets && exerciseData.sets.length > 0 && (
+                <View className="mt-4 pt-4 border-t border-gray-100">
+                  <View className="flex-row items-center justify-between">
+                    <Text className="text-sm text-gray-600">
+                      Exercise Volume:
+                    </Text>
+                    <Text className="text-sm font-medium text-gray-900">
+                      {exerciseData.sets
+                        .reduce((total, set) => {
+                          return total + (set.weight || 0) * (set.reps || 0);
+                        }, 0)
+                        .toLocaleString()}{" "}
+                      {exerciseData.sets[0]?.weightUnit || "lbs"}
+                    </Text>
+                  </View>
+                </View>
+              )}
             </View>
-        
-        </ScrollView>
+          ))}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
