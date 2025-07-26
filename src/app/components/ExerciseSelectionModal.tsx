@@ -30,12 +30,13 @@ export default function ExerciseSelectionModal({
     }
   }, [visible]);
 
-  useEffect(() => {
-    const filtered = exercises.filter((exercise) =>
-        exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
-);
-setFilteredExercises(filtered);
-  }, [exercises, searchQuery]);
+useEffect(() => {
+  const filtered = exercises.filter((exercise) =>
+    exercise.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  setFilteredExercises(filtered);
+}, [exercises, searchQuery]);
+  
 
   const fetchExercises = async () => {
     try {

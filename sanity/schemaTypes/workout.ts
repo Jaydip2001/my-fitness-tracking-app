@@ -32,9 +32,9 @@ export default defineType({
       type: 'array',
       of: [
         {
+          type: 'object',
           name: 'workoutExercise',
           title: 'Workout Exercise',
-          type: 'object',
           fields: [
             {
               name: 'exercise',
