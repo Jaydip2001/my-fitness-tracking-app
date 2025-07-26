@@ -26,10 +26,30 @@ import { WorkoutData } from "@/app/api/save-workout+api";
 
 
 export default function ActiveWorkout() {
+  const [showExerciseSelection, setShowExerciseSelection] = useState(false);
 
+  const {
+    workoutExercises,
+    setWorkoutExercises,
+    resetWorkout,
+    weightUnit,
+    setWeightUnit,
+  } = useWorkoutStore();
+  const router = useRouter();
+//use the stopwatch hook to track the workout duration
   const { seconds, minutes, hours, totalSeconds, reset } = useStopwatch({
     autoStart: true,
   });
+  //Reset timer when screen is no focused
+  useFocusEffect(
+    React.useCallback(() => {
+      //Only reset if we have no exercise(indicates a freshe start after ending workout)
+      if (workoutExercises.length === 0) {
+        reset();
+      }
+    }, [workoutExercises.length, resetWorkout])
+  );
+
   
   
   const getWorkoutDuration = () => {
@@ -37,7 +57,27 @@ export default function ActiveWorkout() {
       .toString()
       .padStart(2, "0")}`;
   };
-  
+
+  const cancelWorkout = () => {
+    Alert.alert(
+      "Cancel Workout",
+      "Are you sure you want to cancel the workout?",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "End Workout",
+          onPress: () => {
+            resetWorkout();
+            router.back();
+          },
+        },
+      ]
+    );
+  };
+  const addExercise = () => {
+    setShowExerciseSelection(true);
+  };
+
   return (
     <View className="flex-1">
       <StatusBar barStyle="light-content" backgroundColor="#1F2937" />
@@ -101,6 +141,61 @@ export default function ActiveWorkout() {
           </View>
         </View>
       </View>
+         {/* Content Area */}
+         <View className="flex-1 bg-white">
+        {/* Workout Progress */}
+        <View className="px-6 mt-4">
+          <Text className="text-center text-gray-600 mb-2">
+            {workoutExercises.length} exercises
+          </Text>
+        </View>
+        
+        {/* If no exercises, show a message */}
+        {workoutExercises.length === 0 && (
+          <View className="bg-gray-50 rounded-2xl p-8 items-center mx-6">
+            <Ionicons name="barbell-outline" size={48} color="#9CA3AF" />
+            <Text className="text-gray-600 text-lg text-center mt-4 font-medium">
+              No exercises yet
+            </Text>
+            <Text className="text-gray-500 text-center mt-2">
+              Get started by adding your first exercise below
+            </Text>
+          </View>
+        )}
+
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+        >
+          <ScrollView className="flex-1 px-6 mt-4">
+            {workoutExercises.map((exercise) => (
+              <View key={exercise.id} className="mb-8">
+                {/* Exercise Header */}
+              </View>
+            ))}
+            {/* Add Exercise Button */}
+            <TouchableOpacity
+            onPress={addExercise}
+            className="bg-blue-600 rounded-2xl py-4 items-center mb-8 active:bg-blue-700"
+            activeOpacity={0.8}
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="add" size={20} color="white" style={{marginRight: 8}} />
+                <Text className="text-white font-semibold text-lg">Add Exercise</Text>                
+              </View>
+            </TouchableOpacity>
+            
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
+
+      {/* Exercise Selection Modal */}
+      <ExerciseSelectionModal
+      visible={showExerciseSelection}
+      onClose={() => setShowExerciseSelection(false)}
+    />
+    </View>
+
 
   )
 }
