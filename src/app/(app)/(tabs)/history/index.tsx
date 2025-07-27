@@ -149,7 +149,7 @@ export default function HistoryPage() {
 
       {/* Workouts List */}
       <ScrollView
-        className="flex-1"
+        className="flex-1 bg-gray-50"
         contentContainerStyle={{ padding: 24 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

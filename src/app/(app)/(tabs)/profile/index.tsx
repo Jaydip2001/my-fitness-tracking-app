@@ -14,29 +14,10 @@ import {
   View,
 } from "react-native";
 import { GetWorkoutsQueryResult } from "sanity/sanity.types";
-import { defineQuery } from "groq";
+import { getWorkoutsQuery } from "../history";
 
-export const getWorkoutsQuery =
-  defineQuery(`*[_type == "workout" && userId == $userId] | order(date desc) {
-    _id,
-    date,
-    duration,
-    exercises[] {
-      exercise-> {
-        _id,
-        name
-      },
-      sets[] {
-        reps,
-        weight,
-        weightUnit,
-        _type,
-        _key
-      },
-      _type,
-      _key
-    }
-  }`);
+
+
 
 export default function ProfilePage() {
   const { signOut } = useAuth();
