@@ -195,7 +195,7 @@ export default function SignUpScreen() {
               {/* Header */}
               <View className="items-center mb-8">
                 <View className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl items-center justify-center mb-4 shadow-lg">
-                  <Ionicons name="fitness" size={40} color="white" />
+                  <Ionicons name="fitness" size={40} color="gray" />
                 </View>
                 <Text className="text-3xl font-bold text-gray-900 mb-2">Join FitTracker</Text>
                 <Text className="text-lg text-gray-600 text-center">
@@ -268,7 +268,8 @@ export default function SignUpScreen() {
                 </TouchableOpacity>
 
                 <Text className="text-xs text-gray-500 text-center mb-4">
-                  By signing up, you agree to our Terms of Service and Privacy Policy
+                  By signing up, you agree to our <Text className="font-bold text-blue-600 underline">Terms</Text>
+                   and <Text className='font-bold text-blue-600 underline'>Privacy Policy</Text>
                 </Text>
               </View>
 
@@ -284,7 +285,7 @@ export default function SignUpScreen() {
 
               <View className="pb-6">
                 <Text className="text-center text-gray-500 text-sm">
-                  Ready to transform your fitness?
+                Developed by <Text className='font-bold'>Jaydip Darji</Text>
                 </Text>
               </View>
             </View>

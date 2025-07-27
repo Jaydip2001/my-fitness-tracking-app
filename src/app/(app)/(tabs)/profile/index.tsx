@@ -89,7 +89,7 @@ export default function ProfilePage() {
 
   return (
     <SafeAreaView className="flex flex-1">
-      <ScrollView className="flex-1">
+      <ScrollView className="flex flex-1">
         {/* Header */}
         <View className="px-6 pt-8 pb-6">
           <Text className="text-3xl font-bold text-gray-900">Profile</Text>

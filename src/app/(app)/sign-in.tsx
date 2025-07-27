@@ -67,7 +67,7 @@ export default function Page() {
       <Ionicons name="fitness" size={40} color="white" />
     </View>
     <Text className="text-3xl font-bold text-gray-900 mb-2">
-      FitTracker
+      FitTracker 
     </Text>
     <Text className="text-lg text-gray-600 text-center">
       Track your fitness journey{"\n"}and reach your goals
@@ -147,7 +147,7 @@ export default function Page() {
 
     {/* Divider */}
 
-    <View className='flex-row items-center my-4'>
+    <View className='flex-row items-center my-1'>
         <View className='flex-1 h-px bg-gray-200'/>
         <Text className='px-4 text-gray-500 text-sm'>or</Text>
         <View className=' flex-1 h-px bg-gray-200'/>
@@ -156,7 +156,7 @@ export default function Page() {
     {/* Google Sign In Button  */}
    <GoogleSignIn/> 
       {/* Sign Up Link */}
-<View className="flex-row justify-center items-center mt-4 ">
+<View className="flex-row justify-center items-center mt-5 ">
   <Text className="text-gray-600">Don't have an account? </Text>
   <Link href="/sign-up" asChild>
     <TouchableOpacity>
@@ -168,9 +168,9 @@ export default function Page() {
 </View>
 
 {/* Footer */}
-<View className='pb-6'>
+<View className='pb-1'>
     <Text className='text-center text-gray-500 text-sm'>
-        Start you Fitness Journey today
+      Developed by <Text className='font-bold'>Jaydip Darji</Text>
     </Text>
 </View>
 </View>
