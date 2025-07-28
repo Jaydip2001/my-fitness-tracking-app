@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI("AIzaSyAdnfUd6oSUN6KUvn2Y6jHQmG8oEnryg7k"); // Replace this with actual key if .env isn't working
+const genAI = new GoogleGenerativeAI(""); // Replace this with actual key if .env isn't working
 
 export async function POST(request: Request) {
   const { exerciseName } = await request.json();
